@@ -1,0 +1,162 @@
+version: 2
+
+sources:
+
+  - name: sql_server_dbo # name of the source 
+    schema: sql_server_dbo # this is the schema our raw data lives in
+    database: ALUMNO24_DEV_BRONZE_DB # this is the name of our database
+
+    quoting:
+      database: false
+      schema: false
+      identifier: false
+
+    freshness:
+      warn_after: {count: 24, period: hour}
+      #error_after: {count: 48, period: hour}
+
+    tables:
+
+      - name: addresses
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: address_id
+            tests:
+              - not_null
+              - unique
+          - name: zipcode
+          - name: country
+          - name: address
+          - name: state
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: events
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: event_id
+          - name: page_url
+          - name: event_type
+          - name: user_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'users')
+                  field: user_id
+          - name: product_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'products')
+                  field: product_id
+          - name: session_id
+          - name: created_at
+          - name: order_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'orders')
+                  field: order_id
+
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+      - name: orders
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: order_id
+            tests:
+              - not_null
+              - unique
+          - name: shipping_service
+          - name: shipping_cost
+          - name: address_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'addresses')
+                  field: address_id
+          - name: created_at
+          - name: promo_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'promos')
+                  field: promo_id
+          - name: estimated_delivery_at
+          - name: order_cost
+          - name: user_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'users')
+                  field: user_id
+          - name: order_total
+          - name: delivery_at
+          - name: tracking_id
+          - name: status
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: order_items
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: order_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'orders')
+                  field: order_id
+          - name: product_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'products')
+                  field: product_id
+             # Composite key: order_id + product_id
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - order_id
+                - product_id
+          - name: quantity
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+      
+      - name: products
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: product_id
+            tests:
+              - not_null
+              - unique
+          - name: price
+          - name: name
+          - name: inventory
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: promos
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: promo_id
+            tests:
+              - not_null
+              - unique
+          - name: discount
+          - name: status
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
+
+      - name: users
+        loaded_at_field: _fivetran_synced
+        columns:
+          - name: user_id
+            tests:
+              - not_null
+              - unique
+          - name: updated_at
+          - name: address_id
+            tests:
+              - relationships:
+                  to: source('sql_server_dbo', 'addresses')
+                  field: address_id
+          - name: last_name
+          - name: created_at
+          - name: phone_number
+          - name: total_orders
+          - name: first_name
+          - name: email
+          - name: _fivetran_deleted
+          - name: _fivetran_synced
