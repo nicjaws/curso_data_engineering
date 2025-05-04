@@ -9,7 +9,7 @@ SELECT
   order_total,
   created_at,
   estimated_delivery_at,
-  delivery_at,
+  delivered_at,
   tracking_id,
   status,
   _fivetran_synced
