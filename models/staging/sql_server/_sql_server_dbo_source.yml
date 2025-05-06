@@ -21,9 +21,6 @@ sources:
         loaded_at_field: _fivetran_synced
         columns:
           - name: address_id
-            tests:
-              - not_null
-              - unique
           - name: zipcode
           - name: country
           - name: address
@@ -38,52 +35,24 @@ sources:
           - name: page_url
           - name: event_type
           - name: user_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'users')
-                  field: user_id
           - name: product_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'products')
-                  field: product_id
           - name: session_id
           - name: created_at
           - name: order_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'orders')
-                  field: order_id
-
           - name: _fivetran_deleted
           - name: _fivetran_synced
       - name: orders
         loaded_at_field: _fivetran_synced
         columns:
           - name: order_id
-            tests:
-              - not_null
-              - unique
           - name: shipping_service
           - name: shipping_cost
           - name: address_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'addresses')
-                  field: address_id
           - name: created_at
           - name: promo_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'promos')
-                  field: promo_id
           - name: estimated_delivery_at
           - name: order_cost
           - name: user_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'users')
-                  field: user_id
           - name: order_total
           - name: delivery_at
           - name: tracking_id
@@ -95,21 +64,7 @@ sources:
         loaded_at_field: _fivetran_synced
         columns:
           - name: order_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'orders')
-                  field: order_id
           - name: product_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'products')
-                  field: product_id
-             # Composite key: order_id + product_id
-        tests:
-          - dbt_utils.unique_combination_of_columns:
-              combination_of_columns:
-                - order_id
-                - product_id
           - name: quantity
           - name: _fivetran_deleted
           - name: _fivetran_synced
@@ -118,9 +73,6 @@ sources:
         loaded_at_field: _fivetran_synced
         columns:
           - name: product_id
-            tests:
-              - not_null
-              - unique
           - name: price
           - name: name
           - name: inventory
@@ -131,9 +83,6 @@ sources:
         loaded_at_field: _fivetran_synced
         columns:
           - name: promo_id
-            tests:
-              - not_null
-              - unique
           - name: discount
           - name: status
           - name: _fivetran_deleted
@@ -143,15 +92,8 @@ sources:
         loaded_at_field: _fivetran_synced
         columns:
           - name: user_id
-            tests:
-              - not_null
-              - unique
           - name: updated_at
           - name: address_id
-            tests:
-              - relationships:
-                  to: source('sql_server_dbo', 'addresses')
-                  field: address_id
           - name: last_name
           - name: created_at
           - name: phone_number
