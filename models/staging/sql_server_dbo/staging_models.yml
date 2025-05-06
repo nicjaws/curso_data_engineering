@@ -1,0 +1,109 @@
+version: 2
+
+models:
+
+  - name: stg_orders
+    description: "Tabla staging que contiene órdenes limpias desde la fuente sql_server_dbo.orders"
+    columns:
+      - name: order_id
+        description: "Identificador único de la orden"
+        tests:
+          - not_null
+          - unique
+      - name: user_id
+        description: "Identificador del usuario que realizó la orden"
+        tests:
+          - not_null
+      - name: created_at
+        description: "Fecha en la que se creó la orden"
+        tests:
+          - not_null
+      - name: status
+        description: "Estado de la orden"
+      - name: order_total
+        description: "Monto total pagado por la orden"
+
+  - name: stg_order_items
+    description: "Items por orden (productos comprados en cada orden)"
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: quantity
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              strict_min: true
+
+  - name: stg_products
+    description: "Tabla staging de productos"
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+      - name: price
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              strict_min: true
+      - name: inventory
+        tests:
+          - not_null
+
+  - name: stg_users
+    description: "Usuarios registrados"
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+          - unique
+      - name: email
+        tests:
+          - not_null
+      - name: created_at
+        tests:
+          - not_null
+
+  - name: stg_addresses
+    description: "Direcciones relacionadas con usuarios u órdenes"
+    columns:
+      - name: address_id
+        tests:
+          - not_null
+          - unique
+      - name: country
+      - name: zipcode
+
+  - name: stg_events
+    description: "Eventos generados por el usuario (clicks, vistas, compras, etc.)"
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: event_type
+        tests:
+          - not_null
+      - name: user_id
+      - name: product_id
+
+  - name: stg_promos
+    description: "Promociones disponibles"
+    columns:
+      - name: promo_id
+        tests:
+          - not_null
+          - unique
+      - name: discount
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      - name: status
