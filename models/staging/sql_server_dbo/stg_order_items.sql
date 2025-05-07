@@ -1,22 +1,17 @@
-{{ config(materialized = 'view') }}
+{{ config(materialized='view') }}
 
 with source as (
-
-    select * 
-    from {{ source('sql_server_dbo', 'order_items') }}
-
+  select * from {{ source('sql_server_dbo', 'order_items') }}
 ),
 
-cleaned as (
-
-    select
-        order_id,
-        product_id,
-        quantity,
-        _fivetran_synced
-    from source
-    where _fivetran_deleted is null or _fivetran_deleted = false
-
+renamed as (
+  select
+    order_id::string as order_id,
+    product_id::string as product_id,
+    quantity::int as quantity,
+    _fivetran_synced::timestamp as _fivetran_synced
+  from source
+  where coalesce(_fivetran_deleted, false) = false
 )
 
-select * from cleaned
+select * from renamed
