@@ -1,18 +1,17 @@
 {{ config(materialized='view') }}
 
 with source as (
-  select * from {{ source('sql_server_dbo', 'promos') }}
+  select * from alumno24_dev_bronze_db.sql_server_dbo.promos
 ),
-
 renamed as (
   select
-    {{ dbt_utils.surrogate_key(['promo_id']) }} as promo_hash_key
-    promo_id::string as promo_id,
-    discount::float as discount,
-    status::string as status,
-    _fivetran_synced::timestamp as _fivetran_synced
+    md5(cast(coalesce(cast(promo_id as TEXT), '') as TEXT)) as promo_hash_key,
+    CAST(promo_id AS VARCHAR) AS promo_id,
+    CAST(discount AS INTEGER) AS discount,
+    CAST(status AS VARCHAR) AS status,
+    CAST(_fivetran_deleted AS BOOLEAN) AS is_deleted,
+    CAST(_fivetran_synced AS TIMESTAMP) AS fivetran_synced
   from source
   where coalesce(_fivetran_deleted, false) = false
 )
-
 select * from renamed
