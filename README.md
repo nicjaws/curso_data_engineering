@@ -1,32 +1,21 @@
-E-commerce Data Warehouse
+# E-commerce Data Warehouse
 Este proyecto implementa un data warehouse completo para un e-commerce siguiendo la arquitectura de medallones (Bronze/Silver/Gold) en Snowflake mediante dbt.
 
 
-Estructura del Proyecto
+# Estructura del Proyecto
+
+<img width="528" alt="Captura de pantalla 2025-05-16 a las 13 35 24" src="https://github.com/user-attachments/assets/946f322e-7b2b-47ad-8007-364253b6d92c" />
 
 
-curso_data_engineering/
-├── analyses/          # Análisis ad-hoc y queries exploratorios
-├── macros/           # Funciones reutilizables para transformaciones
-├── models/           # Modelos principales organizados por capas
-│   ├── staging/      # Capa Bronze - datos limpios de fuentes
-│   │   ├── google_sheets/
-│   │   └── sql_server_dbo/
-│   ├── silver/       # Capa Silver - dimensiones y hechos del negocio
-│   │   ├── dimensions/
-│   │   └── facts/
-│   └── gold/         # Capa Gold - reportes y analytics
-├── seeds/            # Datos estáticos para enriquecer el DW
-├── snapshots/        # Capturas de datos que cambian lentamente
-└── tests/            # Pruebas para validar la calidad de datos
 
-
-Capas del Data Warehouse
+# Capas del Data Warehouse
 
 Bronze (Staging)
 Transforma datos crudos desde las fuentes en un formato consistente y limpio. Implementa tipado estricto y filtrado básico.
 Silver (Integration)
-Organizada en:
+
+
+# Organizada en:
 
 Dimensions: Entidades de negocio como usuarios, productos y direcciones
 Facts: Eventos transaccionales como órdenes, ítems de orden y eventos de usuario
@@ -39,7 +28,7 @@ rpt_user_behavior: Comportamiento de usuario y segmentación
 
 Instalación
 bash# Clonar el repositorio
-git clone https://github.com/tu-usuario/curso_data_engineering.git
+git clone https://github.com/nicjaws/curso_data_engineering.git
 
 # Instalar dependencias
 cd curso_data_engineering
