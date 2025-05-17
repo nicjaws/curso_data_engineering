@@ -7,11 +7,23 @@ with source as (
 renamed as (
   select
     order_id::string as order_id,
-    shipping_service::string as shipping_service,
+    
+    -- Reemplazar NULL o espacios en blanco por 'unknown'
+    case 
+      when shipping_service is null or trim(shipping_service) = '' then 'unknown'
+      else shipping_service::string
+    end as shipping_service,
+
     shipping_cost::float as shipping_cost,
     address_id::string as address_id,
     created_at::timestamp as created_at,
-    promo_id::string as promo_id,
+
+    -- Reemplazar NULL o espacios en blanco por 'no promo'
+    case 
+      when promo_id is null or trim(promo_id) = '' then 'no promo'
+      else promo_id::string
+    end as promo_id,
+
     estimated_delivery_at::timestamp as estimated_delivery_at,
     order_cost::float as order_cost,
     user_id::string as user_id,
@@ -20,6 +32,7 @@ renamed as (
     tracking_id::string as tracking_id,
     status::string as status,
     _fivetran_synced::timestamp as _fivetran_synced
+
   from source
   where coalesce(_fivetran_deleted, false) = false
 )
