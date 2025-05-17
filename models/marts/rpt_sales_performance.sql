@@ -8,15 +8,15 @@
 }}
 
 WITH orders AS (
-    SELECT * FROM {{ ref('fact_orders') }}
+    SELECT * FROM {{ ref('gold_fact_orders') }}
 ),
 
 order_items AS (
-    SELECT * FROM {{ ref('fact_order_items') }}
+    SELECT * FROM {{ ref('gold_fact_order_items') }}
 ),
 
 products AS (
-    SELECT * FROM {{ ref('dim_products') }}
+    SELECT * FROM {{ ref('gold_dim_products') }}
 ),
 
 -- Análisis de ventas diarias

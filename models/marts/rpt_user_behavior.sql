@@ -1,7 +1,9 @@
 {{
     config(
         materialized='table',
-        tags=['gold', 'report', 'user_behavior']
+        database='ALUMNO24_DEV_GOLD_DB',
+        schema='DBT_NCORBALAN',
+        tags=['gold', 'report', 'sales']
     )
 }}
 
