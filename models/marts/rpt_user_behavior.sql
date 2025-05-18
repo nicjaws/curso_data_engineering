@@ -1,25 +1,29 @@
 {{
     config(
-        materialized='table',
-        tags=['gold', 'report', 'user_behavior']
+        materialized='table', 
+        tags=['gold', 'report'] 
     )
 }}
 
+
 WITH users AS (
-    SELECT * FROM ALUMNO24_DEV_SILVER_DB.dbt_ncorbalan.dim_users
+    -- Reference the SILVER dim_users model
+    SELECT * FROM {{ ref('silver_dim_users') }}
 ),
 
 orders AS (
-    SELECT * FROM ALUMNO24_DEV_SILVER_DB.dbt_ncorbalan.fact_orders
+    -- Reference the SILVER fact_orders model
+    SELECT * FROM {{ ref('silver_fact_orders') }}
 ),
 
 events AS (
-    SELECT * FROM ALUMNO24_DEV_SILVER_DB.dbt_ncorbalan.fact_events
+    -- Reference the SILVER fact_events model
+    SELECT * FROM {{ ref('silver_fact_events') }}
 ),
 
--- Análisis de usuarios por actividad de compra
+-- User purchase behavior analysis
 user_purchase_behavior AS (
-    SELECT 
+    SELECT
         users.user_id,
         users.email,
         users.first_name,
@@ -29,18 +33,21 @@ user_purchase_behavior AS (
         COUNT(DISTINCT orders.order_id) AS total_orders,
         SUM(orders.order_total) AS lifetime_value,
         AVG(orders.order_total) AS average_order_value,
-        SUM(orders.order_total) / COUNT(DISTINCT orders.order_id) AS avg_basket_size,
+        -- Ensure no division by zero for avg_basket_size
+        SUM(orders.order_total) / NULLIF(COUNT(DISTINCT orders.order_id), 0) AS avg_basket_size,
+        -- Calculate customer tenure in days
         DATEDIFF('day', MIN(orders.created_at), MAX(orders.created_at)) AS customer_tenure_days
     FROM users
-    LEFT JOIN orders 
+    LEFT JOIN orders
         ON users.user_id = orders.user_id
     GROUP BY users.user_id, users.email, users.first_name, users.last_name
 ),
 
--- Recencia, Frecuencia, Valor Monetario (RFM) 
+-- Recency, Frequency, Monetary Value (RFM)
 user_rfm AS (
-    SELECT 
+    SELECT
         user_id,
+        -- Calculate recency in days relative to the current date
         DATEDIFF('day', MAX(created_at), CURRENT_DATE()) AS recency_days,
         COUNT(DISTINCT order_id) AS frequency,
         SUM(order_total) AS monetary_value
@@ -48,7 +55,7 @@ user_rfm AS (
     GROUP BY user_id
 ),
 
--- Actividad del usuario en el sitio
+-- User site activity analysis
 user_site_activity AS (
     SELECT
         user_id,
@@ -60,11 +67,11 @@ user_site_activity AS (
         COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN event_id END) AS purchases,
         COUNT(DISTINCT CASE WHEN led_to_purchase = TRUE THEN event_id END) AS conversion_events
     FROM events
-    WHERE user_id IS NOT NULL
+    WHERE user_id IS NOT NULL -- Filter out events without a user
     GROUP BY user_id
 ),
 
--- Tasa de conversión por usuario
+-- User conversion rates calculation
 user_conversion_rates AS (
     SELECT
         user_id,
@@ -72,17 +79,19 @@ user_conversion_rates AS (
         page_views,
         add_to_carts,
         purchases,
-        CASE 
+        -- Calculate view-to-purchase rate, handle division by zero
+        CASE
             WHEN page_views > 0 THEN ROUND((purchases::FLOAT / page_views) * 100, 2)
             ELSE 0
         END AS view_to_purchase_rate,
-        CASE 
+        CASE
             WHEN add_to_carts > 0 THEN ROUND((purchases::FLOAT / add_to_carts) * 100, 2)
             ELSE 0
         END AS cart_to_purchase_rate
     FROM user_site_activity
 )
 
+-- Final join to combine all user behavior metrics
 SELECT
     upb.user_id,
     upb.email,
@@ -95,30 +104,30 @@ SELECT
     upb.average_order_value,
     upb.avg_basket_size,
     upb.customer_tenure_days,
-    
-    -- RFM
+
+    -- RFM metrics
     rfm.recency_days,
     rfm.frequency,
     rfm.monetary_value,
-    
-    -- Segmentación RFM simplificada
-    CASE 
+
+    -- Simplified RFM segmentation
+    CASE
         WHEN rfm.recency_days <= 30 AND rfm.frequency >= 3 AND rfm.monetary_value >= 300 THEN 'Champions'
         WHEN rfm.recency_days <= 90 AND rfm.frequency >= 2 THEN 'Loyal Customers'
         WHEN rfm.recency_days > 90 AND rfm.frequency >= 1 THEN 'At Risk'
         WHEN rfm.recency_days <= 30 AND rfm.frequency = 1 THEN 'New Customers'
         ELSE 'Inactive'
     END AS customer_segment,
-    
-    -- Actividad en el sitio
+
+    -- Site activity metrics
     usa.total_events,
     usa.total_sessions,
     usa.page_views,
     usa.add_to_carts,
     usa.checkouts,
     usa.purchases,
-    
-    -- Conversión
+
+    -- Conversion rates
     ucr.view_to_purchase_rate,
     ucr.cart_to_purchase_rate
 FROM user_purchase_behavior upb
