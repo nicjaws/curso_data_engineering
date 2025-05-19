@@ -1,10 +1,12 @@
 {{
     config(
-        materialized='table', 
-        tags=['gold', 'fact'] 
+        materialized='table',
+        tags=['gold', 'fact']
     )
 }}
 
+-- Select data from the SILVER fact_orders model.
+-- Ensure the correct column names from the SILVER model's output are selected.
 SELECT
     -- Keys from the SILVER fact table
     order_id,
@@ -13,7 +15,7 @@ SELECT
     promo_id,
 
     -- Dates from SILVER
-    created_at, -- Order creation timestamp
+    order_date, -- Corrected: Select 'order_date' which is the timestamp column in SILVER
     estimated_delivery_at,
     delivered_at,
 
@@ -44,4 +46,4 @@ SELECT
     dbt_job_id,
     dbt_model_name
 
-FROM {{ ref('silver_fact_orders') }} 
+FROM {{ ref('silver_fact_orders') }} -- Reference to your SILVER model

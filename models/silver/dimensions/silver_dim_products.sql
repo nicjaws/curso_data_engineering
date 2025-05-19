@@ -9,11 +9,11 @@ WITH products AS (
     SELECT * FROM {{ ref('stg_products') }}
 ),
 
--- Opcional: Agregar información de presupuesto si está disponible
+-- Información de presupuestos por producto desde Google Sheets
 budgets AS (
     SELECT 
         product_id,
-        SUM(quantity) AS budgeted_quantity
+        SUM(quantity) AS budgeted_quantity  -- Sumamos todas las cantidades presupuestadas
     FROM {{ ref('stg_google_sheets__budgets') }}
     GROUP BY product_id
 ),
@@ -25,14 +25,14 @@ final AS (
         products.price,
         products.inventory,
         
-        -- Categorización de productos (ejemplo)
+        -- Categorización de productos por precio
         CASE 
             WHEN products.price < 50 THEN 'Bajo costo'
             WHEN products.price BETWEEN 50 AND 200 THEN 'Costo medio'
             ELSE 'Premium'
         END AS price_category,
         
-        -- Estado de inventario
+        -- Estado de inventario para gestión de stock
         CASE 
             WHEN products.inventory = 0 THEN 'Sin stock'
             WHEN products.inventory < 10 THEN 'Stock bajo'
@@ -40,7 +40,7 @@ final AS (
             ELSE 'Stock alto'
         END AS inventory_status,
         
-        -- Información de presupuesto
+        -- Información de presupuesto integrada con el producto
         COALESCE(budgets.budgeted_quantity, 0) AS budgeted_quantity,
         
         -- Campos de auditoría

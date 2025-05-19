@@ -6,12 +6,16 @@
 }}
 
 WITH orders AS (
-    SELECT * FROM {{ ref('stg_orders') }}
+    -- Select from stg_orders and explicitly cast created_at to TIMESTAMP_NTZ
+    SELECT
+        *,
+        created_at::TIMESTAMP_NTZ AS created_at_timestamp_casted -- Ensure timestamp type
+    FROM {{ ref('stg_orders') }}
 ),
 
 -- Cálculo de métricas adicionales
 order_items AS (
-    SELECT 
+    SELECT
         order_id,
         COUNT(DISTINCT product_id) AS unique_products,
         SUM(quantity) AS total_items
@@ -26,48 +30,49 @@ final AS (
         orders.user_id,
         orders.address_id,
         orders.promo_id,
-        
+
         -- Fechas
-        orders.created_at,
+        -- Include the full timestamp column and alias it as order_date
+        orders.created_at_timestamp_casted AS order_date,
         orders.estimated_delivery_at,
         orders.delivered_at,
-        
-        -- Extracción de componentes de fecha
-        EXTRACT(YEAR FROM orders.created_at) AS order_year,
-        EXTRACT(MONTH FROM orders.created_at) AS order_month,
-        EXTRACT(DAY FROM orders.created_at) AS order_day,
-        EXTRACT(DAYOFWEEK FROM orders.created_at) AS order_day_of_week,
-        
+
+        -- Extracción de componentes de fecha (using the casted timestamp)
+        EXTRACT(YEAR FROM orders.created_at_timestamp_casted) AS order_year,
+        EXTRACT(MONTH FROM orders.created_at_timestamp_casted) AS order_month,
+        EXTRACT(DAY FROM orders.created_at_timestamp_casted) AS order_day,
+        EXTRACT(DAYOFWEEK FROM orders.created_at_timestamp_casted) AS order_day_of_week,
+
         -- Métricas
         orders.order_cost,
         orders.shipping_cost,
         orders.order_total,
-        
-        -- Duración de entrega (en días)
-        DATEDIFF('day', orders.created_at, COALESCE(orders.delivered_at, CURRENT_TIMESTAMP())) AS delivery_duration_days,
-        
+
+        -- Duración de entrega (en días) - use the casted timestamp
+        DATEDIFF('day', orders.created_at_timestamp_casted, COALESCE(orders.delivered_at, CURRENT_TIMESTAMP())) AS delivery_duration_days,
+
         -- Estado de la orden
         orders.status,
-        CASE 
+        CASE
             WHEN orders.status = 'delivered' THEN TRUE
             ELSE FALSE
         END AS is_delivered,
-        
+
         -- Información de envío
         orders.shipping_service,
         orders.tracking_id,
-        
+
         -- Información agregada de items
         COALESCE(order_items.unique_products, 0) AS unique_products,
         COALESCE(order_items.total_items, 0) AS total_items,
-        
+
         -- Campos de auditoría
         CURRENT_TIMESTAMP() AS dbt_updated_at,
         '{{ invocation_id }}' AS dbt_job_id,
         '{{ this }}' AS dbt_model_name
     FROM orders
-    LEFT JOIN order_items 
+    LEFT JOIN order_items
         ON orders.order_id = order_items.order_id
 )
 
-SELECT * FROM final
+SELECT * FROM final -- This will now include the 'order_date' column
