@@ -108,24 +108,7 @@ dbt-labs/dbt_utils (v1.3.0): Utilidades y funciones comunes
 metaplane/dbt_expectations (v0.10.8): Pruebas avanzadas para calidad de datos
 
 🧩 Estructura del Proyecto
-ecommerce-data-warehouse/
-├── models/
-│   ├── staging/            # Capa Bronze
-│   │   ├── google_sheets/  # Fuentes de Google Sheets
-│   │   └── sql_server_dbo/ # Fuentes de SQL Server
-│   ├── silver/             # Capa Silver
-│   │   ├── dimensions/     # Dimensiones integradas
-│   │   └── facts/          # Tablas de hechos transformadas
-│   └── marts/              # Capa Gold
-│       ├── dimensions/     # Dimensiones finales
-│       ├── facts/          # Hechos finales
-│       └── reportes/       # Modelos para reportes
-├── tests/                  # Pruebas personalizadas
-├── macros/                 # Macros personalizados
-├── seeds/                  # Datos estáticos
-├── snapshots/              # Seguimiento de cambios históricos
-├── dbt_project.yml         # Configuración del proyecto
-└── packages.yml            # Dependencias de paquetes
+<img width="522" alt="Captura de pantalla 2025-05-19 a las 12 32 28" src="https://github.com/user-attachments/assets/aa53df30-d47f-4e19-812b-a4f7e01fe0b0" />
 
 # 📈 Casos de Uso Recomendados
 
