@@ -9,18 +9,18 @@
 -- It joins data from the SILVER layer dimensions and facts using ref()
 WITH users AS (
     -- Reference the SILVER dim_users model
-    SELECT * FROM {{ ref('silver_dim_users') }}
+    SELECT * FROM {{ ref('stg_users') }}
 ),
 
 orders AS (
     -- Reference the SILVER fact_orders model
     -- The column containing the order timestamp in silver_fact_orders is 'order_date'
-    SELECT * FROM {{ ref('silver_fact_orders') }}
+    SELECT * FROM {{ ref('stg_orders') }}
 ),
 
 events AS (
     -- Reference the SILVER fact_events model
-    SELECT * FROM {{ ref('silver_fact_events') }}
+    SELECT * FROM {{ ref('stg_events') }}
 ),
 
 -- User purchase behavior analysis
@@ -30,19 +30,19 @@ user_purchase_behavior AS (
         users.email,
         users.first_name,
         users.last_name,
-        -- Use orders.order_date instead of orders.created_at
-        MIN(orders.order_date) AS first_purchase_date,
-        MAX(orders.order_date) AS last_purchase_date,
-        COUNT(DISTINCT orders.order_id) AS total_orders,
-        SUM(orders.order_total) AS lifetime_value,
-        AVG(orders.order_total) AS average_order_value,
+       
+        MIN(stg_orders.created_at) AS first_purchase_date,
+        MAX(stg_orders.created_at) AS last_purchase_date,
+        COUNT(DISTINCT stg_orders.order_id) AS total_orders,
+        SUM(stg_orders.order_total) AS lifetime_value,
+        AVG(stg_orders.order_total) AS average_order_value,
         -- Ensure no division by zero for avg_basket_size
-        SUM(orders.order_total) / NULLIF(COUNT(DISTINCT orders.order_id), 0) AS avg_basket_size,
+        SUM(stg_orders.order_total) / NULLIF(COUNT(DISTINCT stg_orders.order_id), 0) AS avg_basket_size,
         -- Calculate customer tenure in days using orders.order_date
-        DATEDIFF('day', MIN(orders.order_date), MAX(orders.order_date)) AS customer_tenure_days
+        DATEDIFF('day', MIN(stg_orders.created_at), MAX(stg_orders.created_at)) AS customer_tenure_days
     FROM users
-    LEFT JOIN orders
-        ON users.user_id = orders.user_id
+    LEFT JOIN stg_orders
+        ON users.user_id = stg_orders.user_id
     GROUP BY users.user_id, users.email, users.first_name, users.last_name
 ),
 
@@ -51,7 +51,7 @@ user_rfm AS (
     SELECT
         user_id,
         -- Calculate recency in days relative to the current date using order_date
-        DATEDIFF('day', MAX(order_date), CURRENT_DATE()) AS recency_days,
+        DATEDIFF('day', MAX(created_at), CURRENT_DATE()) AS recency_days,
         COUNT(DISTINCT order_id) AS frequency,
         SUM(order_total) AS monetary_value
     FROM orders
@@ -69,8 +69,7 @@ user_site_activity AS (
         COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN event_id END) AS page_views,
         COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN event_id END) AS add_to_carts,
         COUNT(DISTINCT CASE WHEN event_type = 'checkout' THEN event_id END) AS checkouts,
-        COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN event_id END) AS purchases,
-        COUNT(DISTINCT CASE WHEN led_to_purchase = TRUE THEN event_id END) AS conversion_events
+        COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN event_id END) AS purchases
     FROM events
     WHERE user_id IS NOT NULL -- Filter out events without a user
     GROUP BY user_id
