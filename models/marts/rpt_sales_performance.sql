@@ -1,11 +1,17 @@
 {{
     config(
         materialized='table',
-        database='ALUMNO24_DEV_GOLD_DB',
-        schema='DBT_NCORBALAN',
         tags=['gold', 'report', 'sales']
     )
 }}
+
+/* 
+ * Este modelo consolida el análisis de ventas para múltiples dimensiones:
+ * - Ventas diarias (tendencias a corto plazo)
+ * - Ventas por producto (rendimiento de catálogo)
+ * - Rendimiento por estado de orden (eficiencia operativa)
+ * - Tendencias mensuales (rendimiento a largo plazo)
+ */
 
 WITH orders AS (
     SELECT * FROM {{ ref('gold_fact_orders') }}
@@ -19,20 +25,20 @@ products AS (
     SELECT * FROM {{ ref('gold_dim_products') }}
 ),
 
--- Análisis de ventas diarias
+-- Análisis de ventas diarias para tendencias a corto plazo
 daily_sales AS (
     SELECT
-        DATE_TRUNC('day', created_at) AS date,
+        DATE_TRUNC('day', orders.order_date) AS date,
         COUNT(DISTINCT order_id) AS order_count,
         COUNT(DISTINCT user_id) AS unique_customers,
         SUM(order_total) AS total_sales,
         SUM(shipping_cost) AS total_shipping,
         AVG(order_total) AS avg_order_value
     FROM orders
-    GROUP BY DATE_TRUNC('day', created_at)
+    GROUP BY DATE_TRUNC('day', orders.order_date)
 ),
 
--- Análisis de ventas por producto
+-- Análisis de ventas por producto para evaluar el rendimiento del catálogo
 product_sales AS (
     SELECT
         order_items.product_id,
@@ -47,7 +53,7 @@ product_sales AS (
     GROUP BY order_items.product_id, products.name
 ),
 
--- Rendimiento por estado de orden
+-- Rendimiento por estado de orden para analizar la eficiencia operativa
 order_status_performance AS (
     SELECT 
         status,
@@ -58,18 +64,19 @@ order_status_performance AS (
     GROUP BY status
 ),
 
--- Análisis de ventas por mes
+-- Análisis de tendencias mensuales para evaluar el rendimiento a largo plazo
 monthly_trends AS (
     SELECT
-        DATE_TRUNC('month', created_at) AS month,
+        DATE_TRUNC('month', orders.order_date) AS month,
         COUNT(DISTINCT order_id) AS order_count,
         COUNT(DISTINCT user_id) AS unique_customers,
         SUM(order_total) AS total_sales,
         SUM(order_total) / COUNT(DISTINCT user_id) AS revenue_per_customer
     FROM orders
-    GROUP BY DATE_TRUNC('month', created_at)
+    GROUP BY DATE_TRUNC('month', orders.order_date)
 )
 
+-- Unificamos todos los análisis en un solo modelo para facilitar el consumo
 SELECT
     'daily_sales' AS report_type,
     date AS date_period,

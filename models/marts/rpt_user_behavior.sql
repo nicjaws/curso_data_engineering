@@ -1,11 +1,12 @@
 {{
     config(
-        materialized='table', 
-        tags=['gold', 'report'] 
+        materialized='table',
+        tags=['gold', 'report']
     )
 }}
 
-
+-- This model creates a report on user behavior in the GOLD layer (marts)
+-- It joins data from the SILVER layer dimensions and facts using ref()
 WITH users AS (
     -- Reference the SILVER dim_users model
     SELECT * FROM {{ ref('silver_dim_users') }}
@@ -13,6 +14,7 @@ WITH users AS (
 
 orders AS (
     -- Reference the SILVER fact_orders model
+    -- The column containing the order timestamp in silver_fact_orders is 'order_date'
     SELECT * FROM {{ ref('silver_fact_orders') }}
 ),
 
@@ -28,15 +30,16 @@ user_purchase_behavior AS (
         users.email,
         users.first_name,
         users.last_name,
-        MIN(orders.created_at) AS first_purchase_date,
-        MAX(orders.created_at) AS last_purchase_date,
+        -- Use orders.order_date instead of orders.created_at
+        MIN(orders.order_date) AS first_purchase_date,
+        MAX(orders.order_date) AS last_purchase_date,
         COUNT(DISTINCT orders.order_id) AS total_orders,
         SUM(orders.order_total) AS lifetime_value,
         AVG(orders.order_total) AS average_order_value,
         -- Ensure no division by zero for avg_basket_size
         SUM(orders.order_total) / NULLIF(COUNT(DISTINCT orders.order_id), 0) AS avg_basket_size,
-        -- Calculate customer tenure in days
-        DATEDIFF('day', MIN(orders.created_at), MAX(orders.created_at)) AS customer_tenure_days
+        -- Calculate customer tenure in days using orders.order_date
+        DATEDIFF('day', MIN(orders.order_date), MAX(orders.order_date)) AS customer_tenure_days
     FROM users
     LEFT JOIN orders
         ON users.user_id = orders.user_id
@@ -47,8 +50,8 @@ user_purchase_behavior AS (
 user_rfm AS (
     SELECT
         user_id,
-        -- Calculate recency in days relative to the current date
-        DATEDIFF('day', MAX(created_at), CURRENT_DATE()) AS recency_days,
+        -- Calculate recency in days relative to the current date using order_date
+        DATEDIFF('day', MAX(order_date), CURRENT_DATE()) AS recency_days,
         COUNT(DISTINCT order_id) AS frequency,
         SUM(order_total) AS monetary_value
     FROM orders
@@ -57,6 +60,8 @@ user_rfm AS (
 
 -- User site activity analysis
 user_site_activity AS (
+    -- This CTE uses the 'events' CTE, which references silver_fact_events.
+    -- Ensure silver_fact_events has the necessary columns (event_type, session_id, event_id, led_to_purchase).
     SELECT
         user_id,
         COUNT(*) AS total_events,
@@ -73,6 +78,7 @@ user_site_activity AS (
 
 -- User conversion rates calculation
 user_conversion_rates AS (
+    -- This CTE uses user_site_activity, which is derived from the 'events' CTE.
     SELECT
         user_id,
         total_events,
