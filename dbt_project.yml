@@ -43,7 +43,7 @@ models:
       +materialized: table
     marts:
       +database: ALUMNO24_DEV_GOLD_DB
-      # +schema: DBT_NCORBALAN  <-- ELIMINA ESTA LÍNEA
+      
     staging:
       +database: ALUMNO24_DEV_SILVER_DB
-      # +schema: DBT_NCORBALAN  <-- ELIMINA ESTA LÍNEA
+      
