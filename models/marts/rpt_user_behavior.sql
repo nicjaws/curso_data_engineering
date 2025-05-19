@@ -5,52 +5,51 @@
     )
 }}
 
--- This model creates a report on user behavior in the GOLD layer (marts)
--- It joins data from the SILVER layer dimensions and facts using ref()
+-- Este modelo crea un reporte sobre el comportamiento de los usuarios utilizando las tablas de la capa GOLD
+-- Une datos de las dimensiones y hechos de la capa GOLD usando ref()
 WITH users AS (
-    -- Reference the SILVER dim_users model
-    SELECT * FROM {{ ref('stg_users') }}
+    -- Referencia al modelo gold_dim_users
+    SELECT * FROM {{ ref('gold_dim_users') }}
 ),
 
 orders AS (
-    -- Reference the SILVER fact_orders model
-    -- The column containing the order timestamp in silver_fact_orders is 'order_date'
-    SELECT * FROM {{ ref('stg_orders') }}
+    -- Referencia al modelo gold_fact_orders
+    SELECT * FROM {{ ref('gold_fact_orders') }}
 ),
 
 events AS (
-    -- Reference the SILVER fact_events model
-    SELECT * FROM {{ ref('stg_events') }}
+    -- Referencia al modelo gold_fact_events
+    SELECT * FROM {{ ref('gold_fact_events') }}
 ),
 
--- User purchase behavior analysis
+-- Análisis del comportamiento de compra de los usuarios
 user_purchase_behavior AS (
     SELECT
         users.user_id,
         users.email,
         users.first_name,
         users.last_name,
-       
-        MIN(stg_orders.created_at) AS first_purchase_date,
-        MAX(stg_orders.created_at) AS last_purchase_date,
-        COUNT(DISTINCT stg_orders.order_id) AS total_orders,
-        SUM(stg_orders.order_total) AS lifetime_value,
-        AVG(stg_orders.order_total) AS average_order_value,
-        -- Ensure no division by zero for avg_basket_size
-        SUM(stg_orders.order_total) / NULLIF(COUNT(DISTINCT stg_orders.order_id), 0) AS avg_basket_size,
-        -- Calculate customer tenure in days using orders.order_date
-        DATEDIFF('day', MIN(stg_orders.created_at), MAX(stg_orders.created_at)) AS customer_tenure_days
+        -- Usamos la tabla gold_fact_orders (órdenes) y sus columnas
+        MIN(orders.created_at) AS first_purchase_date,
+        MAX(orders.created_at) AS last_purchase_date,
+        COUNT(DISTINCT orders.order_id) AS total_orders,
+        SUM(orders.order_total) AS lifetime_value,
+        AVG(orders.order_total) AS average_order_value,
+        -- Evitamos división por cero para avg_basket_size
+        SUM(orders.order_total) / NULLIF(COUNT(DISTINCT orders.order_id), 0) AS avg_basket_size,
+        -- Calculamos la antigüedad del cliente en días
+        DATEDIFF('day', MIN(orders.created_at), MAX(orders.created_at)) AS customer_tenure_days
     FROM users
-    LEFT JOIN stg_orders
-        ON users.user_id = stg_orders.user_id
+    LEFT JOIN orders
+        ON users.user_id = orders.user_id
     GROUP BY users.user_id, users.email, users.first_name, users.last_name
 ),
 
--- Recency, Frequency, Monetary Value (RFM)
+-- Recencia, Frecuencia, Valor Monetario (RFM)
 user_rfm AS (
     SELECT
         user_id,
-        -- Calculate recency in days relative to the current date using order_date
+        -- Calculamos la recencia en días relativa a la fecha actual
         DATEDIFF('day', MAX(created_at), CURRENT_DATE()) AS recency_days,
         COUNT(DISTINCT order_id) AS frequency,
         SUM(order_total) AS monetary_value
@@ -58,10 +57,9 @@ user_rfm AS (
     GROUP BY user_id
 ),
 
--- User site activity analysis
+-- Análisis de actividad en el sitio
 user_site_activity AS (
-    -- This CTE uses the 'events' CTE, which references silver_fact_events.
-    -- Ensure silver_fact_events has the necessary columns (event_type, session_id, event_id, led_to_purchase).
+    -- Esta CTE usa la CTE 'events', que referencia gold_fact_events
     SELECT
         user_id,
         COUNT(*) AS total_events,
@@ -71,20 +69,20 @@ user_site_activity AS (
         COUNT(DISTINCT CASE WHEN event_type = 'checkout' THEN event_id END) AS checkouts,
         COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN event_id END) AS purchases
     FROM events
-    WHERE user_id IS NOT NULL -- Filter out events without a user
+    WHERE user_id IS NOT NULL -- Filtramos eventos sin usuario
     GROUP BY user_id
 ),
 
--- User conversion rates calculation
+-- Cálculo de tasas de conversión
 user_conversion_rates AS (
-    -- This CTE uses user_site_activity, which is derived from the 'events' CTE.
+    -- Esta CTE usa user_site_activity, derivada de la CTE 'events'
     SELECT
         user_id,
         total_events,
         page_views,
         add_to_carts,
         purchases,
-        -- Calculate view-to-purchase rate, handle division by zero
+        -- Calculamos la tasa de vista a compra, manejamos división por cero
         CASE
             WHEN page_views > 0 THEN ROUND((purchases::FLOAT / page_views) * 100, 2)
             ELSE 0
@@ -96,7 +94,7 @@ user_conversion_rates AS (
     FROM user_site_activity
 )
 
--- Final join to combine all user behavior metrics
+-- Unión final para combinar todas las métricas de comportamiento de usuario
 SELECT
     upb.user_id,
     upb.email,
@@ -110,12 +108,12 @@ SELECT
     upb.avg_basket_size,
     upb.customer_tenure_days,
 
-    -- RFM metrics
+    -- Métricas RFM
     rfm.recency_days,
     rfm.frequency,
     rfm.monetary_value,
 
-    -- Simplified RFM segmentation
+    -- Segmentación RFM simplificada
     CASE
         WHEN rfm.recency_days <= 30 AND rfm.frequency >= 3 AND rfm.monetary_value >= 300 THEN 'Champions'
         WHEN rfm.recency_days <= 90 AND rfm.frequency >= 2 THEN 'Loyal Customers'
@@ -124,7 +122,7 @@ SELECT
         ELSE 'Inactive'
     END AS customer_segment,
 
-    -- Site activity metrics
+    -- Métricas de actividad en el sitio
     usa.total_events,
     usa.total_sessions,
     usa.page_views,
@@ -132,7 +130,7 @@ SELECT
     usa.checkouts,
     usa.purchases,
 
-    -- Conversion rates
+    -- Tasas de conversión
     ucr.view_to_purchase_rate,
     ucr.cart_to_purchase_rate
 FROM user_purchase_behavior upb
