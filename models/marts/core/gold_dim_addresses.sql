@@ -10,6 +10,5 @@ SELECT
     address,
     zipcode,
     state,
-    country,         
-    
-FROM {{ ref('stg_addresses') }} 
+    country
+FROM {{ ref('stg_addresses') }}

@@ -28,14 +28,14 @@ products AS (
 -- Análisis de ventas diarias para tendencias a corto plazo
 daily_sales AS (
     SELECT
-        DATE_TRUNC('day', stg_orders.created_at) AS date,
+        DATE_TRUNC('day', orders.created_at) AS date,
         COUNT(DISTINCT order_id) AS order_count,
         COUNT(DISTINCT user_id) AS unique_customers,
         SUM(order_total) AS total_sales,
         SUM(shipping_cost) AS total_shipping,
         AVG(order_total) AS avg_order_value
     FROM orders
-    GROUP BY DATE_TRUNC('day', stg_orders.created_at)
+    GROUP BY DATE_TRUNC('day', orders.created_at)
 ),
 
 -- Análisis de ventas por producto para evaluar el rendimiento del catálogo
@@ -45,7 +45,7 @@ product_sales AS (
         products.name AS product_name,
         COUNT(DISTINCT order_items.order_id) AS times_ordered,
         SUM(order_items.quantity) AS units_sold,
-        SUM(order_items.item_total) AS total_product_revenue,
+        SUM(products.price * order_items.quantity) AS total_product_revenue,
         AVG(order_items.quantity) AS avg_qty_per_order
     FROM order_items
     JOIN products 
@@ -59,21 +59,22 @@ order_status_performance AS (
         status,
         COUNT(*) AS order_count,
         SUM(order_total) AS total_value,
-        AVG(delivery_duration_days) AS avg_delivery_days
+        AVG(DATEDIFF('day', created_at, delivered_at)) AS avg_delivery_days
     FROM orders
+    WHERE delivered_at IS NOT NULL
     GROUP BY status
 ),
 
 -- Análisis de tendencias mensuales para evaluar el rendimiento a largo plazo
 monthly_trends AS (
     SELECT
-        DATE_TRUNC('month', stg_orders.created_at) AS month,
+        DATE_TRUNC('month', orders.created_at) AS month,
         COUNT(DISTINCT order_id) AS order_count,
         COUNT(DISTINCT user_id) AS unique_customers,
         SUM(order_total) AS total_sales,
         SUM(order_total) / COUNT(DISTINCT user_id) AS revenue_per_customer
     FROM orders
-    GROUP BY DATE_TRUNC('month', stg_orders.created_at)
+    GROUP BY DATE_TRUNC('month', orders.created_at)
 )
 
 -- Unificamos todos los análisis en un solo modelo para facilitar el consumo

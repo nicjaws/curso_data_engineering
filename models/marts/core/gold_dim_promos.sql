@@ -8,6 +8,5 @@
 SELECT
     promo_id,
     discount,
-    status,
-    
+    status
 FROM {{ ref('stg_promos') }}
