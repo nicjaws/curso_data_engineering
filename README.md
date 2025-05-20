@@ -111,6 +111,7 @@ metaplane/dbt_expectations (v0.10.8): Pruebas avanzadas para calidad de datos
 
 <img width="1101" alt="Captura de pantalla 2025-05-20 a las 11 07 49" src="https://github.com/user-attachments/assets/dc899773-fe3f-4d20-8338-b4affe657537" />
 
+![Captura de pantalla 2025-05-20 194544](https://github.com/user-attachments/assets/7f39472b-59af-4c71-b8db-bf19cda49d7a)
 
 # 📈 Casos de Uso Recomendados
 
