@@ -1,11 +1,18 @@
 {{
     config(
-        materialized='view'
+        materialized='incremental',
+        unique_key='order_id',
+        incremental_strategy='delete+insert'
     )
 }}
 
 with source as (
   select * from {{ source('sql_server_dbo', 'orders') }}
+  
+  {% if is_incremental() %}
+  -- Only get records updated since the last run
+  where _fivetran_synced > (select max(_fivetran_synced) from {{ this }})
+  {% endif %}
 ),
 
 renamed as (
