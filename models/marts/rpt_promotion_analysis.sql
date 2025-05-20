@@ -143,7 +143,7 @@ promo_product_analysis AS (
         p.price AS product_price,
         COUNT(DISTINCT o.order_id) AS orders,
         SUM(oi.quantity) AS units_sold,
-        SUM(oi.item_total) AS revenue
+        SUM(oi.item_revenue_total) AS revenue
     FROM orders o
     JOIN order_items oi ON o.order_id = oi.order_id
     JOIN products p ON oi.product_id = p.product_id

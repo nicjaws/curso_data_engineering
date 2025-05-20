@@ -31,7 +31,7 @@ order_item_detail AS (
         oi.order_id,
         oi.product_id,
         oi.quantity,
-        oi.item_total,
+        oi.item_revenue_total,
         o.created_at AS order_date,
         o.status AS order_status,
         DATE_TRUNC('day', o.created_at) AS day,
