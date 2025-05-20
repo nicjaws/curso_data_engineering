@@ -14,7 +14,8 @@ SELECT
     order_items.quantity,
     
     -- Calculate item total 
-    products.price * order_items.quantity AS item_total
+    products.price * order_items.quantity AS item_revenue_total
+    
 
 FROM {{ ref('stg_order_items') }} as order_items
 JOIN {{ ref('stg_products') }} as products
