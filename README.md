@@ -109,9 +109,8 @@ metaplane/dbt_expectations (v0.10.8): Pruebas avanzadas para calidad de datos
 
 🧩 Linaje y Estructura del Proyecto
 
-<img width="1101" alt="Captura de pantalla 2025-05-20 a las 11 07 49" src="https://github.com/user-attachments/assets/67f303d5-ca04-41dd-ad7f-4ed731c4f158" />
+<img width="1101" alt="Captura de pantalla 2025-05-20 a las 11 07 49" src="https://github.com/user-attachments/assets/dc899773-fe3f-4d20-8338-b4affe657537" />
 
-<img width="522" alt="Captura de pantalla 2025-05-19 a las 12 32 28" src="https://github.com/user-attachments/assets/aa53df30-d47f-4e19-812b-a4f7e01fe0b0" />
 
 # 📈 Casos de Uso Recomendados
 
