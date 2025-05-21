@@ -1,25 +1,23 @@
 {{
     config(
-        materialized='table', 
+        materialized='incremental',
+        unique_key='event_id',
+        incremental_strategy='delete+insert',
         tags=['gold', 'fact']
     )
 }}
 
+-- Primero intentemos un modelo sin lógica incremental para confirmar que funciona
 SELECT
-    -- Keys
     event_id,
     user_id,
-    product_id,
     session_id,
-
-    -- Event Information
-    event_type,
-    page_url,
-
-    -- Conversion Information (from SILVER)
-    
+    product_id,
     order_id,
-  
-
-
-FROM {{ ref('stg_events') }}
+    page_url,
+    event_type,
+    created_at,
+    fivetran_synced,
+    CURRENT_TIMESTAMP() as dbt_updated_at
+FROM 
+    {{ ref('stg_events') }}

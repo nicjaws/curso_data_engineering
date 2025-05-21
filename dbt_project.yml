@@ -41,8 +41,14 @@ models:
     # Applies to all files under models/example/
     example:
       +materialized: table
+      sales:
+        +tags: ["sales", "report"]
+      reports:
+        +tags: ["gold", "report"]
     marts:
       +database: ALUMNO24_DEV_GOLD_DB
+    
+    
       
     staging:
       +database: ALUMNO24_DEV_SILVER_DB
