@@ -107,11 +107,15 @@ dbt-labs/codegen (v0.13.1): Generación automática de código
 dbt-labs/dbt_utils (v1.3.0): Utilidades y funciones comunes
 metaplane/dbt_expectations (v0.10.8): Pruebas avanzadas para calidad de datos
 
-🧩 Linaje y Estructura del Proyecto
+🧩 Linaje y modelo relacional
 
-<img width="1101" alt="Captura de pantalla 2025-05-20 a las 11 07 49" src="https://github.com/user-attachments/assets/dc899773-fe3f-4d20-8338-b4affe657537" />
+<img width="1101" alt="Captura de pantalla 2025-05-20 a las 11 07 49" src="https://github.com/user-attachments/assets/f8695180-eba1-413e-984d-7cd1e1e59a24" />
 
-![Captura de pantalla 2025-05-20 194544](https://github.com/user-attachments/assets/7f39472b-59af-4c71-b8db-bf19cda49d7a)
+![Captura de pantalla 2025-05-21 175502](https://github.com/user-attachments/assets/8818ca10-1bf2-46c9-bdb7-1991a171c398)
+
+
+
+![Captura de pantalla 2025-05-21 190651](https://github.com/user-attachments/assets/23eea231-b0fa-48ca-ac0e-c6ebb2b90ba4)
 
 # 📈 Casos de Uso Recomendados
 
