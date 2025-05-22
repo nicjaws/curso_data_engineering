@@ -1,7 +1,18 @@
-{{ config(materialized='view') }}
+{{ 
+  config(
+    materialized='incremental',
+    unique_key=['order_id', 'product_id'],
+    on_schema_change='fail'
+  ) 
+}}
 
 with source as (
   select * from {{ source('sql_server_dbo', 'order_items') }}
+  
+  {% if is_incremental() %}
+    -- Solo procesar registros que han sido actualizados desde la última ejecución
+    where _fivetran_synced > (select max(_fivetran_synced) from {{ this }})
+  {% endif %}
 ),
 
 renamed as (
