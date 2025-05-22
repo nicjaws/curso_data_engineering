@@ -7,17 +7,22 @@
     )
 }}
 
--- Primero intentemos un modelo sin lógica incremental para confirmar que funciona
 SELECT
+    -- Keys
     event_id,
     user_id,
-    session_id,
     product_id,
-    order_id,
-    page_url,
+    session_id,
     event_type,
+    page_url,
+    order_id,
     created_at,
-    fivetran_synced,
+    _fivetran_synced,
     CURRENT_TIMESTAMP() as dbt_updated_at
-FROM 
-    {{ ref('stg_events') }}
+
+FROM {{ ref('stg_events') }}
+
+{% if is_incremental() %}
+    -- Simple approach: use a reasonable lookback period
+    WHERE created_at >= CURRENT_DATE - 7  -- Process last 7 days on incremental runs
+{% endif %}
